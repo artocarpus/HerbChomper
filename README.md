@@ -3,6 +3,9 @@ A bioinformatic tool for trimming poorly-aligned ends from DNA sequences.
 
 DNA sequences assembled from herbarium and other museum specimens often have error-rich ends that do not align well. Poorly-aligned ends on otherwise reliable sequences can lead to unnecessary data loss when filters are applied only to whole sequences or whole columns in an alignment. HerbChomper trims the ends of a target sequence until identity to a reference within the same alignment calculated within a sliding window reaches a user-defined threshold. 
 
+NEW UPDATE: June 7, 2020 - Beta version 0.3 
+Automated reference choosing is much faster in this version.
+
 Installation: download herbchomper.R or clone this repository.
 
 Dependencies: R and the SeqinR package. The latter will be automatically installed if it is not already present.
