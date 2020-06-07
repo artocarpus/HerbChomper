@@ -1,4 +1,4 @@
-### HerbChomper Beta 0.21 - for review - E. Gardner - May 26, 2020
+### HerbChomper Beta 0.3 - for review - E. Gardner - June 4, 2020
 
 ### Usage: Rscript herbchomper.R -a [alignment in] -o [alignment out] -t [sequence to trim] -r [reference sequence or "auto"] -w [size of sliding window] -i [identity cutoff] -g [gap size necessary to restart trimming]
 
@@ -72,25 +72,29 @@ for (i in length(gene[[target]]):1) {
 }
 
 #select the right reference if -a was set to "auto"
+
 if (ref == "auto") {
-	similarity<-matrix(0,nrow=length(gene)-1,ncol=length(gene[[target]]))
-	rownames(similarity)<-names(gene[names(gene)!=target])
-	for (i in posF:posR) {
-		for (j in 1:nrow(similarity)) {
-			if (gene[[target]][i]==gene[[rownames(similarity)[j]]][i] & gene[[target]][i] != "-" & gene[[target]][i] != "N" ) {
-				similarity[j,i]<-1
-			}
-			else {
-				next
-			}
-		}
+
+#cut columns that are undetermined in the target sequence
+posF->posKeep
+for (i in (posF+1):posR) {
+	if (gene[[target]][i] != "-" & gene[[target]][i] != "n") {
+		posKeep <- c(posKeep,i)
 	}
-	rep(0,nrow(similarity))->simScores
-	rownames(similarity)->names(simScores)
-	for (i in 1:nrow(similarity)){
-		simScores[i]<-sum(similarity[i,])
-	}
-	names(sort(simScores))[length(simScores)]->ref
+}
+gene->geneCut
+for (i in 1:length(geneCut)) {
+geneCut[[i]]<-geneCut[[i]][posKeep]	
+}
+write.fasta(geneCut,names=names(gene),file=paste(seqfile,".cut.tmp",collapse="",sep=""))
+read.alignment(paste(seqfile,".cut.tmp",collapse="",sep=""),"fasta")->alignment
+system((paste("rm ", seqfile,".cut.tmp",collapse="",sep="")))
+
+#calculate distances and pick the closest sequence as the reference. If multiple sequences are tied, one will be chosen arbitrarily.
+as.matrix(dist.alignment(alignment, matrix = "identity",gap=1))->distances
+sort(distances[target,colnames(distances)!=target])->targetDist
+names(targetDist[targetDist==min(targetDist)])[1]->ref
+
 print(paste("Reference automatically set to ",ref,collapse=""))
 }
 
