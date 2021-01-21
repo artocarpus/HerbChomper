@@ -23,20 +23,20 @@ identity<-as.numeric(args[grep("-i",args)+1])
 #size of gap required to restart trimming
 
 ###### To use in the R environment, uncomment this section, set these seven variables and then run from here down
-#working directory
-setwd("~/scratch")
-#alignment
-seqfile<-("alignment.fasta")
-#output alignment
-outfile<-"alignment.chomped"
-#sequence to trim
-target<-"1"
-#reference sequence
-ref<-c("2")
-#sliding window size
-slidingwindow<-10
-#identity cutoff
-identity<-0.8
+##working directory
+#setwd("~/scratch")
+##alignment
+#seqfile<-("alignment.fasta")
+##output alignment
+#outfile<-"alignment.chomped"
+##sequence to trim
+#target<-"1"
+##reference sequence
+#ref<-c("2")
+##sliding window size
+#slidingwindow<-10
+##identity cutoff
+#identity<-0.8
 
 #check dependency and load alignments
 if ("seqinr" %in% rownames(installed.packages()) == FALSE) {install.packages("seqinr")}
