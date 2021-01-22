@@ -1,8 +1,8 @@
 ### HerbChomper, through-version Beta 0.1 - E. Gardner - January 21, 2021
 
-### This version of HerbChomper trims an entire sequence end-to-end within a sliding window.
+### This version of HerbChomper trims an entire sequence end-to-end within a sliding window. The target sequence is scanned in both directions, and bases that do not meet the specified threshold in both scans (narrow cut) or either scan (wide cut) are trimmed.
 
-### Usage: Rscript herbchomper.R -a [alignment in] -o [alignment out] -t [sequence to trim] -r [reference sequence or "auto"] -w [size of sliding window] -i [identity cutoff] 
+### Usage: Rscript herbchomper.R -a [alignment in] -o [alignment out] -t [sequence to trim] -r [reference sequence or "auto"] -w [size of sliding window] -i [identity cutoff] -c [0 for narrow or 1 for wide cut]
 
 ### The reference can be user specified or chosen automatically by specifying "-a auto". In the latter case, the sequence with the highest similarity to the target will be chosen, ignoring gaps and undetermined characters.
 
@@ -20,7 +20,8 @@ ref<-args[grep("-r",args)+1]
 slidingwindow<-as.numeric(args[grep("-w",args)+1])
 #identity cutoff
 identity<-as.numeric(args[grep("-i",args)+1])
-#size of gap required to restart trimming
+#wide or narrow cut
+cutsize<-as.numeric(args[grep("-c",args)+1])
 
 ###### To use in the R environment, uncomment this section, set these seven variables and then run from here down
 ##working directory
@@ -84,7 +85,7 @@ for (i in (posF+1):posR) {
 }
 gene->geneCut
 for (i in 1:length(geneCut)) {
-geneCut[[i]]<-geneCut[[i]][posKeep]	
+geneCut[[i]]<-geneCut[[i]][posKeep]
 }
 write.fasta(geneCut,names=names(gene),file=paste(seqfile,".cut.tmp",collapse="",sep=""))
 read.alignment(paste(seqfile,".cut.tmp",collapse="",sep=""),"fasta")->alignment
@@ -94,26 +95,6 @@ system((paste("rm ", seqfile,".cut.tmp",collapse="",sep="")))
 as.matrix(dist.alignment(alignment, matrix = "identity",gap=1))->distances
 sort(distances[target,colnames(distances)!=target])->targetDist
 names(targetDist[targetDist==min(targetDist)])[1]->ref
-
-#older slower verion of reference picking
-#	similarity<-matrix(0,nrow=length(gene)-1,ncol=length(gene[[target]]))
-#	rownames(similarity)<-names(gene[names(gene)!=target])
-#	for (i in posF:posR) {
-#		for (j in 1:nrow(similarity)) {
-#			if (gene[[target]][i]==gene[[rownames(similarity)[j]]][i] & gene[[target]][i] != "-" & #gene[[target]][i] != "n" ) {
-#				similarity[j,i]<-1
-#			}
-#			else {
-#				next
-#			}
-#		}
-#	}
-#	rep(0,nrow(similarity))->simScores
-#	rownames(similarity)->names(simScores)
-#	for (i in 1:nrow(similarity)){
-#		simScores[i]<-sum(similarity[i,])
-#	}
-#	names(sort(simScores))[length(simScores)]->ref
 
 print(paste("Reference automatically set to ",ref,collapse=""))
 }
@@ -142,8 +123,13 @@ for (i in posR:max(posF, slidingwindow)) {
 		}
 }
 
-#now cut the positions flagged in both the forward and reverse scans
-gene[[1]][intersect(cutF,cutR)]<-"-"
+#now cut the positions flagged in either the forward or reverse scans
+if (cutsize == 1) {
+	gene[[1]][unique(c(cutF[2:length(cutF)],cutR[2:length(cutR)]))]<-"-"
+} else {
+	gene[[1]][intersect(cutF,cutR)]<-"-"
+}
 
-print(paste(length(intersect(cutF,cutR))," characters out of ",length1," removed for target sequence ",target,sep="",collapse=""))
+length2<-sum(gene[[target]][1:length(gene[[target]])]!="-")
+print(paste(length1-length2," non-gap characters out of ",length1," removed for target sequence ",target,sep="",collapse=""))
 write.fasta(gene,names=names(gene),file=paste(outfile))
